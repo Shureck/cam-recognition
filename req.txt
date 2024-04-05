@@ -1,0 +1,12 @@
+tensorflow
+keras
+mtcnn
+opencv-python
+numpy
+scipy
+imutils
+icrawler
+requests
+bs4
+pillow
+six
