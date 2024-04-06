@@ -125,7 +125,20 @@ indexxx = 0;
     //     card.innerHTML = `<img class="photoContainer" src="static/defaultprofile.png" onclick="takePhoto(this)">`;
     //     cardsContainer.appendChild(card);
     // }
+    function drawProgress(context, percentage) {
+        const centerX = context.canvas.width / 2;
+        const centerY = context.canvas.height / 2;
+        const radius = 30;
+        const startAngle = -0.5 * Math.PI;
+        const endAngle = (percentage * 2 * Math.PI) - 0.5 * Math.PI;
 
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        context.beginPath();
+        context.arc(centerX, centerY, radius, startAngle, endAngle);
+        context.strokeStyle = 'rgba(128, 128, 128, 0.5)'; // Серый цвет с прозрачностью
+        context.lineWidth = 10; // Ширина линии
+        context.stroke();
+    }
     // Функция для снимка с камеры
     // Функция для снимка с камеры
     function takePhoto(indexx) {
@@ -142,13 +155,12 @@ indexxx = 0;
         }
 
         // Запрашиваем доступ к камере
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
         .then(stream => {
             // Создаем элемент <video> и устанавливаем в него поток видео
             const video = document.createElement('video');
             video.srcObject = stream;
             video.play();
-            
             // Ожидаем, пока видео загрузится
             video.addEventListener('loadedmetadata', () => {
                 // Создаем элемент <canvas> для обработки изображения
@@ -156,15 +168,43 @@ indexxx = 0;
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 const context = canvas.getContext('2d');
+
+                video.width = Card[indexx].offsetWidth;
+                video.height = Card[indexx].offsetHeight;
+                Card[indexx].insertBefore(video, CardImg[0]);
+                CardImg[0].style.display = 'none';
                 
+                // Создаем прогресс-бар и добавляем его в DOM
+                // const progressBar = document.createElement('canvas');
+                //   progressBar.width = 100;
+                //   progressBar.height = 100;
+                //   progressBar.style.position = 'absolute'; // Позиционируем прогресс-бар абсолютно
+                //   progressBar.style.top = '0';
+                //   progressBar.style.left = '0';
+                //   Card[indexx].appendChild(progressBar);
+
+                  let progress = 0;
+                  const interval = setInterval(() => {
+                      // drawProgress(progressBar.getContext('2d'), progress);
+                      // progress += 0.01; // Увеличиваем процент заполнения на 1%
+                      // if (progress >= 1) {
+                          clearInterval(interval);
+                          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                          imgElement.src = canvas.toDataURL('image/jpeg');
+                          stream.getTracks().forEach(track => track.stop());
+                          CardImg[0].style.display = '';
+                          video.style.display = 'none';
+                          Card[indexx].removeChild(progressBar); // Удаляем прогресс-бар после завершения
+                      // }
+                  }, 1500); // Обновляем прогресс каждые 15 миллисекунд
                 // Рисуем текущий кадр видео на элемент <canvas>
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                // context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                // Преобразуем изображение в формат data URL и устанавливаем как источник изображения для элемента <img>
-                imgElement.src = canvas.toDataURL('image/jpeg');
+                //    // Преобразуем изображение в формат data URL и устанавливаем как источник изображения для элемента <img>
+                // imgElement.src = canvas.toDataURL('image/jpeg');
+                // stream.getTracks().forEach(track => track.stop());
+
                 
-                // Останавливаем поток видео и закрываем все его треки
-                stream.getTracks().forEach(track => track.stop());
             });
         })
         .catch(err => {
@@ -197,41 +237,35 @@ indexxx = 0;
 
     // Функция для отправки фотографий на сервер
     function sendPhotos() {
-      if (indexxx > 3){
-        const checkboxes = document.querySelectorAll('.photoContainer');
-        const formData = new FormData();
+      const checkboxes = document.querySelectorAll('.photoContainer');
+      const formData = new FormData();
 
-        checkboxes.forEach((checkbox, index) => {
-            const file = dataURLtoFile(checkbox.src, `photo${index + 1}.jpg`);
-            formData.append(`photo${index + 1}`, file);
-        });
+      checkboxes.forEach((checkbox, index) => {
+          const file = dataURLtoFile(checkbox.src, `photo${index + 1}.jpg`);
+          formData.append(`photo${index + 1}`, file);
+      });
 
-        const emailInput = document.getElementById('emailInput');
-        const email = encodeURIComponent(emailInput.value);
+      const emailInput = document.getElementById('emailInput');
+      const email = encodeURIComponent(emailInput.value);
 
-        fetch(`/photos?email=${email}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Произошла ошибка при отправке фотографий.');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log(data);
-            alert('Фотографии успешно отправлены.');
-        })
-        .catch(error => {
-            console.error('Ошибка при отправке фотографий:', error);
-            alert('Произошла ошибка при отправке фотографий.');
-        });
-      }
-      else{
-        takePhoto(indexxx)
-        indexxx++;
-      }
+      fetch(`/photos?email=${email}`, {
+          method: 'POST',
+          body: formData
+      })
+      .then(response => {
+          if (!response.ok) {
+              throw new Error('Произошла ошибка при отправке фотографий.');
+          }
+          return response.json();
+      })
+      .then(data => {
+          console.log(data);
+          alert('Фотографии успешно отправлены.');
+      })
+      .catch(error => {
+          console.error('Ошибка при отправке фотографий:', error);
+          alert('Произошла ошибка при отправке фотографий.');
+      });
     }
 
     // Функция для преобразования Data URL в Blob
