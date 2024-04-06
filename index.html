@@ -41,6 +41,7 @@
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    margin-bottom: 20px; /* Внешний отступ снизу */
   }
   #sendButton:disabled {
     background-color: #ccc;
@@ -55,25 +56,27 @@
 <div class="container">
   <div class="row">
     <div class="col-md-6 offset-md-3">
+      <h1 class="text-center mt-4">Snap Spotter</h1>
+      <p class="text-center">Выберите фотографии для отправки и введите ваш email:</p>
       <div id="cardsContainer">
         <div class="card">
-          <img class="photoContainer" src="static/front.png" onclick="takePhoto(0)">
+          <img class="photoContainer" src="static/front_ai.png" onclick="takePhoto(0)">
         </div>
         <div class="card">
-          <img class="photoContainer" src="static/left.png" onclick="takePhoto(1)">
+          <img class="photoContainer" src="static/left_ai.png" onclick="takePhoto(1)">
         </div>
         <div class="card">
-          <img class="photoContainer" src="static/right.png" onclick="takePhoto(2)">
+          <img class="photoContainer" src="static/right_ai.png" onclick="takePhoto(2)">
         </div>
         <div class="card">
-          <img class="photoContainer" src="static/down (2).png" onclick="takePhoto(3)">
+          <img class="photoContainer" src="static/down_ai.png" onclick="takePhoto(3)">
         </div>
       </div>
       <div id="checkboxDiv">
         <input type="email" class="form-control mb-2" id="emailInput" placeholder="Введите ваш email">
         <input type="checkbox" id="selectAll" onchange="checkAll()" class="mb-2">
         <label for="selectAll">Выбрать все</label>
-        <button id="sendButton" onclick="sendPhotos()" class="btn btn-primary btn-block">Отправить</button>
+        <button id="sendButton" onclick="sendPhotos()" class="btn btn-primary btn-block" disabled>Отправить</button>
       </div>
     </div>
   </div>
@@ -169,8 +172,8 @@ indexxx = 0;
                 canvas.height = video.videoHeight;
                 const context = canvas.getContext('2d');
 
-                video.width = Card[indexx].offsetWidth;
-                video.height = Card[indexx].offsetHeight;
+                video.style.width = "100%";
+                video.style.height = "auto";
                 Card[indexx].insertBefore(video, CardImg[0]);
                 CardImg[0].style.display = 'none';
                 
@@ -194,7 +197,7 @@ indexxx = 0;
                           stream.getTracks().forEach(track => track.stop());
                           CardImg[0].style.display = '';
                           video.style.display = 'none';
-                          Card[indexx].removeChild(progressBar); // Удаляем прогресс-бар после завершения
+                          //Card[indexx].removeChild(progressBar); // Удаляем прогресс-бар после завершения
                       // }
                   }, 1500); // Обновляем прогресс каждые 15 миллисекунд
                 // Рисуем текущий кадр видео на элемент <canvas>
@@ -215,25 +218,37 @@ indexxx = 0;
 
     // Функция для выбора всех карточек
     function checkAll() {
-        const checkboxes = document.querySelectorAll('.card input[type="checkbox"]');
-        const selectAllCheckbox = document.getElementById('selectAll');
-        checkboxes.forEach(checkbox => checkbox.checked = selectAllCheckbox.checked);
+        // const checkboxes = document.querySelectorAll('.card input[type="checkbox"]');
+        // const selectAllCheckbox = document.getElementById('selectAll');
+        // checkboxes.forEach(checkbox => checkbox.checked = selectAllCheckbox.checked);
         updateSendButtonState();
     }
 
     // Функция для проверки состояния кнопки отправки
+    // Функция для проверки состояния кнопки отправки
     function updateSendButtonState() {
-        const checkboxes = document.querySelectorAll('.card input[type="checkbox"]');
+        const images = document.querySelectorAll('img');
         const sendButton = document.getElementById('sendButton');
-        let allChecked = true;
-        checkboxes.forEach(checkbox => {
-            if (!checkbox.checked) {
+        const emailInput = document.getElementById('emailInput');
+        let allChecked = false;
+        images.forEach(img => {
+          console.log(img.src.startsWith('data:image/jpeg;base64'));
+            if (!img.src.startsWith('data:image/jpeg;base64')) {
                 allChecked = false;
                 return;
             }
+            else{
+              allChecked = true;
+            }
         });
+
+        if (emailInput.value.trim() === '') {
+          allChecked = false;
+        }
+        
         sendButton.disabled = !allChecked;
     }
+
 
     // Функция для отправки фотографий на сервер
     function sendPhotos() {
@@ -281,19 +296,6 @@ indexxx = 0;
         return new File([u8arr], filename, { type: mime });
     }
 
-
-// Функция для преобразования Data URL в файл
-    function dataURLtoFile(dataURL, filename) {
-        const arr = dataURL.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new File([u8arr], filename, { type: mime });
-    }
     // Вспомогательная функция для преобразования Data URL в Blob
     function dataURItoBlob(dataURI) {
         const byteString = atob(dataURI.split(',')[1]);
